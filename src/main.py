@@ -1,35 +1,61 @@
 from vector_store.chroma import ChromaVectorStore
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from typing import List
 from config import FINAL_CSBH_DATA, FINAL_CSDT_DATA,FINAL_CSVC_DATA,FINAL_LAPTOP_DATA, LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME
 from logger import logger
 
-def retrieve(query: str):
-    chroma_vector_store = ChromaVectorStore()
-    collection_names = [LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME]
-    data_files = [FINAL_LAPTOP_DATA, FINAL_CSBH_DATA, FINAL_CSDT_DATA, FINAL_CSVC_DATA]
+class LaptopRAG:
+    def __init__(self):
+        self.chroma_vector_store = ChromaVectorStore()
+        self.vector_store = None
 
-    try:
-        laptop_vector_store = chroma_vector_store.load_collection(LAPTOP_COLLECTION_NAME)
-    
-    except Exception as e:
-        print(f"Collection not found, initializing new collections: {e}")
-        logger.info(f"Collection not found, initializing new collections., error: {e}")
-        with open(FINAL_LAPTOP_DATA, "r", encoding="utf-8") as f:
-            laptop_text = f.read()
-        laptop_vector_store = chroma_vector_store.initialize_collection(
+    def get_collection(self):
+        vector_store = self.chroma_vector_store.get_or_create_collection(
             collection_name= LAPTOP_COLLECTION_NAME,
-            text = laptop_text
+            data_path= FINAL_LAPTOP_DATA
         )
+        return vector_store
     
-    similarity_results = chroma_vector_store.similarity_search(query, laptop_vector_store)
-    results = chroma_vector_store.hybrid_search(query, laptop_vector_store)
-    bm25_results = results['bm25_retriever']
+    def ensure_vector_store(self):
+        if self.vector_store is None:
+            self.vector_store = self.get_collection()
+    
+    def similarity_retrieve(self, query: str):
+        self.ensure_vector_store()
+        chroma_vector_store = self.chroma_vector_store  
+        results = chroma_vector_store.similar_search(query, self.vector_store)
 
-    return similarity_results
+        return results
+    
+    def hybrid_retrieve(self, query: str):
+        self.ensure_vector_store()
+        chroma_vector_store = self.chroma_vector_store
+        results = chroma_vector_store.hybrid_search(query, self.vector_store)
 
-if __name__ == "__main__":
-    query = "CPU của laptop Dell Inspiron 14 5441 là gì?"
-    results = retrieve(query)
-    print(results)
+        return results
+    
+    def doc_to_text(self, docs: List[Document]) -> str:
+        pass
+
+    def similar_response(self, query: str):
+        results = self.similarity_retrieve(query)
+        texts = self.doc_to_text(results)
+
+        return texts
+
+
+
+    
+
+
+
+
+
+# if __name__ == "__main__":
+#     query = "CPU của laptop Dell Inspiron 14 5441 là gì?"
+#     results = retrieve(query)
+#     print(results)
 
 
 

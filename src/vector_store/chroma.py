@@ -54,11 +54,25 @@ class ChromaVectorStore:
 
         return vector_store
     
-    def similarity_search(self, query: str, vector_store: Chroma) -> List[Document]:
+    def get_or_create_collection(self, collection_name: str, data_path: str) -> Chroma:
+        try:
+            vector_store = self.load_collection(collection_name)
+    
+        except Exception as e:
+            logger.info(f"Collection not found, initializing new collections, error: {e}")
+            with open(data_path, "r", encoding="utf-8") as f:
+                laptop_text = f.read()
+            vector_store = self.initialize_collection(
+                collection_name= collection_name,
+                text = laptop_text
+            )
+        return vector_store
+    
+    def similar_search(self, query: str, vector_store: Chroma) -> List[Document]:
         docs = vector_store.similarity_search(query= query, k= self.rag_config.top_k_result)
         return docs
 
-    def hybrid_search(self, query: str, vector_store: Chroma) -> dict :
+    def hybrid_search(self, query: str, vector_store: Chroma) -> List[Document] :
 
         data = vector_store.get()
         documents =[
@@ -73,10 +87,7 @@ class ChromaVectorStore:
             retrievers=[bm25_retriever, mmr_retriever, similarity_retriever],
             weights=[0.2,0.5,0.3]
         )
-        results = {
-            "ensemble_retriever": ensemble_retriever.invoke(query),
-            "bm25_retriever": bm25_retriever.invoke(query)
-        }
+        results = ensemble_retriever.invoke(query)
         return results
 
 
