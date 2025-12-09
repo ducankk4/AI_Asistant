@@ -9,6 +9,10 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 EMBEDDING_MODEL_VN = "text-embedding-3-large"
 GOOGLE_EMBEDDING_MODEL = "gemini-embedding-001"
+ROUTING_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+RERANKING_MODEL = ""
+RESPONSE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+REWRITE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
 FINAL_LAPTOP_DATA = r"crawl_data\final_data\laptop.txt"
 FINAL_CSBH_DATA = r"crawl_data\final_data\csbh.txt"

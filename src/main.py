@@ -21,28 +21,24 @@ class LaptopRAG:
         if self.vector_store is None:
             self.vector_store = self.get_collection()
     
-    def similarity_retrieve(self, query: str):
+    def similarity_response(self, query: str):
         self.ensure_vector_store()
         chroma_vector_store = self.chroma_vector_store  
         results = chroma_vector_store.similar_search(query, self.vector_store)
-
-        return results
+        texts = self.doc_to_text(results)
+        return texts
     
-    def hybrid_retrieve(self, query: str):
+    def hybrid_response(self, query: str):
         self.ensure_vector_store()
         chroma_vector_store = self.chroma_vector_store
         results = chroma_vector_store.hybrid_search(query, self.vector_store)
-
-        return results
+        texts = self.doc_to_text(results)
+        return texts
     
     def doc_to_text(self, docs: List[Document]) -> str:
         pass
 
-    def similar_response(self, query: str):
-        results = self.similarity_retrieve(query)
-        texts = self.doc_to_text(results)
 
-        return texts
 
 
 

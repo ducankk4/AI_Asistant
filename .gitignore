@@ -3,3 +3,4 @@ venv/
 __pycache__/
 vector_store/chroma_collections/
 app.log
+test.ipynb
