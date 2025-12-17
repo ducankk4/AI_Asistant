@@ -4,9 +4,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from typing import List
-from embedding.google_embed import GoogleEmbedding
-from logger import logger
-from config import rag_config, GOOGLE_API_KEY, GOOGLE_EMBEDDING_MODEL
+from src.embedding.google_embed import GoogleEmbedding
+from src.logger import logger
+from src.config import rag_config, GOOGLE_API_KEY, GOOGLE_EMBEDDING_MODEL
 import chromadb
 import os
 

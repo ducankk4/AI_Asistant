@@ -13,6 +13,7 @@ ROUTING_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 RERANKING_MODEL = ""
 RESPONSE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 REWRITE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+ANALYSIS_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
 FINAL_LAPTOP_DATA = r"crawl_data\final_data\laptop.txt"
 FINAL_CSBH_DATA = r"crawl_data\final_data\csbh.txt"
@@ -23,7 +24,7 @@ class RAG_config:
     top_k_result: int = 3
     chunk_size: int = 1000
     chunk_overlap: int = 150
-    persist_directory: str = r"vector_store\chroma_collections"
+    persist_directory: str = r"src\vector_store\chroma_collections"
 
 LAPTOP_COLLECTION_NAME: str = "laptop_collection"
 CSBH_COLLECTION_NAME: str = "csbh_collection"

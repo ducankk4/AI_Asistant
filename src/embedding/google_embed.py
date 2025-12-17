@@ -1,4 +1,4 @@
-from embedding.base import BaseEmbeddingAPI
+from src.embedding.base import BaseEmbeddingAPI
 from typing import List
 from google import genai
 # from config import GOOGLE_API_KEY, GOOGLE_EMBEDDING_MODEL

@@ -1,9 +1,9 @@
-from vector_store.chroma import ChromaVectorStore
+from src.vector_store.chroma import ChromaVectorStore
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from typing import List
-from config import FINAL_CSBH_DATA, FINAL_CSDT_DATA,FINAL_CSVC_DATA,FINAL_LAPTOP_DATA, LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME
-from logger import logger
+from src.config import FINAL_CSBH_DATA, FINAL_CSDT_DATA,FINAL_CSVC_DATA,FINAL_LAPTOP_DATA, LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME
+from src.logger import logger
 
 class LaptopRAG:
     def __init__(self):
@@ -25,8 +25,8 @@ class LaptopRAG:
         self.ensure_vector_store()
         chroma_vector_store = self.chroma_vector_store  
         results = chroma_vector_store.similar_search(query, self.vector_store)
-        texts = self.doc_to_text(results)
-        return texts
+        # texts = self.doc_to_text(results)
+        return results
     
     def hybrid_response(self, query: str):
         self.ensure_vector_store()

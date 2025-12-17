@@ -20,3 +20,7 @@ RESPONSE_PROMPT = """ bạn là 1 trợ lý ai đẳng cấp hãy trả lời c�
 query: {query}
 context: {context}
 """
+
+QUERY_ANALYSIS_PROMPT = """Hãy phân tích câu hỏi sau và chia nhỏ thành các câu hỏi con để trả lời
+query: {query}
+"""
