@@ -62,9 +62,32 @@ class RAGGraph:
 
 class FinalGraph:
     def __init__(self):
-        self.rag_processor = RAGGraph().implement_graph()
+        # self.rag_processor = RAGGraph().implement_graph()
         self.final_node = FinalNodes()
 
+    def inplement_graph(self):
+        # initialize stateGraph
+        final_graph = StateGraph(state_schema= FinalState)
+
+        # add nodes
+        final_graph.add_node("query_analysis_node", self.final_node.query_analysis_node)
+        final_graph.add_node("process_queries", self.final_node.process_queries)
+        final_graph.add_node("final_generate_node", self.final_node.final_generate_node)
+
+        # set entry point 
+        final_graph.set_entry_point("query_analysis_node")
+
+        # analyze -> process -> final generate
+        final_graph.add_edge("query_analysis_node", "process_queries")
+        final_graph.add_edge("process_queries", "final_generate_node")
+        final_graph.add_edge("final_generate_node", END)
+
+        # compile gragh
+        compiled_final_graph = final_graph.compile()
+        return compiled_final_graph
+    
+
+        
 
     
 

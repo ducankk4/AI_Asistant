@@ -1,12 +1,12 @@
 from src.agent.model import RAGState, QueryRouting, QueryRewrite, QueryAnalysis, FinalState
-from src.prompts.rag_prompts import RESPONSE_PROMPT, REWRITE_PROMPT, ROUTING_PROMPT, QUERY_ANALYSIS_PROMPT
+from src.prompts.rag_prompts import RESPONSE_PROMPT, REWRITE_PROMPT, ROUTING_PROMPT, QUERY_ANALYSIS_PROMPT, FINAL_RESPONSE_PROMPT
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-from typing import List
+from langchain_core.documents import Document
+from typing import List, Dict
 from src.logger import logger
 from src.config import REWRITE_MODEL, ROUTING_MODEL, RERANKING_MODEL, RESPONSE_MODEL, GROQ_API_KEY, ANALYSIS_MODEL
 from src.main import LaptopRAG
-from src.agent.graphs import RAGGraph
 import asyncio
 
 class RAGNodes:
@@ -21,7 +21,9 @@ class RAGNodes:
         reason_for_rewrite = state.get('reason_for_rewrite', '')
 
         # implement rewrite chain
-        rewrite_llm = ChatGroq(model= REWRITE_MODEL, api_key= GROQ_API_KEY)
+        rewrite_llm = ChatGroq(model= REWRITE_MODEL,
+                               max_tokens=2048,
+                                api_key= GROQ_API_KEY)
         rewrite_chain = ChatPromptTemplate.from_template(REWRITE_PROMPT) | rewrite_llm.with_structured_output(QueryRewrite)
 
         if not need_rewrite:
@@ -50,7 +52,9 @@ class RAGNodes:
         rewrited_query = state['rewrited_query']
         
         # implement routing chain
-        routing_llm = ChatGroq(model= ROUTING_MODEL, api_key= GROQ_API_KEY)
+        routing_llm = ChatGroq(model= ROUTING_MODEL,
+                               
+                                 api_key= GROQ_API_KEY)
         routing_chain = ChatPromptTemplate.from_template(ROUTING_PROMPT) | routing_llm.with_structured_output(QueryRouting)
 
         logger.info("Routing query...")
@@ -119,7 +123,9 @@ class RAGNodes:
             context = "\n".join([doc.page_content for doc in retrieved_docs])
 
         # implement response generation chain
-        response_llm = ChatGroq(model= RESPONSE_MODEL, api_key= GROQ_API_KEY)
+        response_llm = ChatGroq(model= RESPONSE_MODEL,
+                                max_tokens=2048,
+                                  api_key= GROQ_API_KEY)
         reponse_chain = ChatPromptTemplate.from_template(RESPONSE_PROMPT) | response_llm
 
         logger.info("Generating response...")
@@ -135,11 +141,15 @@ class RAGNodes:
 
 class FinalNodes:
     def __init__(self):
+        from src.agent.graphs import RAGGraph
         self.rag_processor = RAGGraph().implement_graph()
 
     def query_analysis_node(self, state: FinalState) -> FinalState:
         query_analysis_prompt = ChatPromptTemplate.from_template(QUERY_ANALYSIS_PROMPT)
-        llm = ChatGroq(model= ANALYSIS_MODEL, api_key= GROQ_API_KEY)
+        llm = ChatGroq(model= ANALYSIS_MODEL,
+                       max_tokens=2048,
+                       temperature=0,
+                         api_key= GROQ_API_KEY)
         analysis_chain = query_analysis_prompt | llm.with_structured_output(QueryAnalysis)
 
         logger.info("Analyzing query...")
@@ -152,8 +162,10 @@ class FinalNodes:
 
         return{
             **state,
+            'original_query': state['query'],
             'need_decomposition': results.need_decomposition,
             'sub_queries' : results.sub_queries,
+            'execution_plan': results.execution_plan,
         }
     
     async def process_queries(self, state: FinalState) -> FinalState:
@@ -167,7 +179,7 @@ class FinalNodes:
 
         if not need_decomposition :
             print("processing single query  from rag_processor")
-            rag_result = await self._process_single_query(sub_queries)
+            rag_result = await self._process_single_query(query)
             query_results[rag_result['query']] = rag_result['retrived_docs']
 
             return {
@@ -216,6 +228,40 @@ class FinalNodes:
         rag_result: RAGState = await self.rag_processor.ainvoke(rag_state)
 
         return rag_result
+    
+    def dict_to_text(self, query_results: Dict[str, List[Document]]) -> str:
+        """convert dict of query results from rag processor to text format"""
+        query_combined = ""
+        for sub_query, docs in query_results.items():
+            doc_combined = "\n".join([f"- {doc.page_content}" for doc in docs])
+            query_combined += f"**Câu hỏi con: {sub_query}\n Thông tin liên quan:\n{doc_combined}\n----------------\n"
+
+        return query_combined.strip()
+        
+    def final_generate_node(self, state: FinalState) -> FinalState:
+        """final node for answer user question"""
+        original_quey = state['original_query']
+        need_decompositon = state['need_decomposition']
+        query_results = state['query_results']
+        all_docs = state.get('all_retrieved_docs', [])
+
+        if all_docs:
+            response_llm = ChatGroq(model= RESPONSE_MODEL,
+                                    max_tokens=2048,
+                                    api_key= GROQ_API_KEY)
+            reponse_chain = ChatPromptTemplate.from_template(FINAL_RESPONSE_PROMPT) | response_llm
+            query_combined = self.dict_to_text(query_results)
+            logger.info("Generating final response...")
+            final_response = reponse_chain.invoke({
+                'original_query': original_quey,
+                'query_combined': query_combined
+            })
+
+            return {
+                **state,
+                'final_answer': final_response.content
+            }
+        
     
 
     
