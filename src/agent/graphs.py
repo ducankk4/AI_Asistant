@@ -1,5 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, END
 from src.agent.nodes import RAGNodes, FinalNodes
 from src.agent.model import RAGState, FinalState
@@ -8,8 +9,9 @@ from src.config import ROUTING_MODEL, RERANKING_MODEL, RESPONSE_MODEL
 from src.logger import logger
 
 class RAGGraph:
-    def __init__(self):
+    def __init__(self, memory_saver = None):
         self.graph_node = RAGNodes()
+        self.memory_saver = memory_saver if memory_saver else MemorySaver()
 
     def route_to_collection(self, state: RAGState) -> Literal["laptop_retrieve_node", "csbh_retrieve_node", "csdt_retrieve_node", "csvc_retrieve_node"]:
         "route to the collection based on query routing node"
@@ -56,16 +58,15 @@ class RAGGraph:
         rag_graph.add_edge("generate_node", END)
 
         # compile graph
-        compiled_rag_graph = rag_graph.compile()
+        compiled_rag_graph = rag_graph.compile(checkpointer= self.memory_saver)
 
         return compiled_rag_graph
 
 class FinalGraph:
-    def __init__(self):
+    def __init__(self, memory_saver = None):
         # self.rag_processor = RAGGraph().implement_graph()
         self.final_node = FinalNodes()
-
-    def inplement_graph(self):
+        self.memory_saver = memory_saver if memory_saver else MemorySaver()
         # initialize stateGraph
         final_graph = StateGraph(state_schema= FinalState)
 
@@ -83,7 +84,7 @@ class FinalGraph:
         final_graph.add_edge("final_generate_node", END)
 
         # compile gragh
-        compiled_final_graph = final_graph.compile()
+        compiled_final_graph = final_graph.compile(checkpointer= self.memory_saver)
         return compiled_final_graph
     
 
