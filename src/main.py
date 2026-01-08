@@ -2,7 +2,7 @@ from src.vector_store.chroma import ChromaVectorStore
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from typing import List
-from src.config import FINAL_CSBH_DATA, FINAL_CSDT_DATA,FINAL_CSVC_DATA,FINAL_LAPTOP_DATA, LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME
+# from src.config import FINAL_CSBH_DATA, FINAL_CSDT_DATA,FINAL_CSVC_DATA,FINAL_LAPTOP_DATA, LAPTOP_COLLECTION_NAME, CSBH_COLLECTION_NAME, CSDT_COLLECTION_NAME, CSVC_COLLECTION_NAME
 from src.logger import logger
 
 class LaptopRAG:

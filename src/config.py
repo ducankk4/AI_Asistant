@@ -9,11 +9,11 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 EMBEDDING_MODEL_VN = "text-embedding-3-large"
 GOOGLE_EMBEDDING_MODEL = "gemini-embedding-001"
-ROUTING_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+ROUTING_MODEL = "gemini-2.5-flash-lite"
 RERANKING_MODEL = ""
-RESPONSE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
-REWRITE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
-ANALYSIS_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+RESPONSE_MODEL = "gemini-2.5-flash-lite"
+REWRITE_MODEL = "gemini-2.5-flash-lite"
+ANALYSIS_MODEL = "gemini-2.5-flash-lite"
 
 class DataPaths:
     FINAL_LAPTOP_DATA = r"src\crawl_data\final_data\laptop.txt"

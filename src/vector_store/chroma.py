@@ -14,6 +14,10 @@ class ChromaVectorStore:
     def __init__(self):
         self.embedding_function = GoogleEmbedding(GOOGLE_API_KEY, GOOGLE_EMBEDDING_MODEL)
         self.rag_config = rag_config
+        self.client = chromadb.PersistentClient(
+            path= self.rag_config.persist_directory
+        )
+        logger.info(f"Initialized ChromaDB persistent client at: {self.rag_config.persist_directory}")
 
     def chunking(self, text: str) -> List[Document]:
         text_splitter = RecursiveCharacterTextSplitter(
@@ -31,42 +35,43 @@ class ChromaVectorStore:
             documents.append(doc)
         return documents
     
+    def check_collection_exists(self, collection_name: str) -> bool:
+        existing_collections = self.client.list_collections()
+        for coll in existing_collections:
+            if coll.name == collection_name:
+                return True
+        return False
+    
+    def delete_collection(self, collection_name: str):
+        if self.check_collection_exists(collection_name):
+            self.client.delete_collection(name= collection_name)
+            logger.info(f"deleted collection: {collection_name}")
+        else:
+            logger.info(f"Collection {collection_name} does not exist, cant delete")
+    
     def load_collection(self, collection_name: str) -> Chroma:
         vector_store = Chroma(
-            persist_directory= self.rag_config.persist_directory,
+            client= self.client,
             embedding_function = self.embedding_function,
             collection_name= collection_name
         )
         logger.info(f"Loaded existing collection: {collection_name}")
         return vector_store
     
-    def initialize_collection(self, collection_name: str, text: str) -> Chroma:
+    def create_collection(self, collection_name: str, text: str) -> Chroma:
         documents = self.chunking(text)
         logger.info(f"_______________Total chunks created_____________: {len(documents)}")
 
         vector_store = Chroma.from_documents(
             documents=documents,
-            persist_directory= self.rag_config.persist_directory,
+            client= self.client,
             embedding= self.embedding_function,
             collection_name= collection_name
         )
         logger.info(f"Created new collection: {collection_name}")
 
         return vector_store
-    
-    def get_or_create_collection(self, collection_name: str, data_path: str) -> Chroma:
-        try:
-            vector_store = self.load_collection(collection_name)
-    
-        except Exception as e:
-            logger.info(f"Collection not found, initializing new collections, error: {e}")
-            with open(data_path, "r", encoding="utf-8") as f:
-                laptop_text = f.read()
-            vector_store = self.initialize_collection(
-                collection_name= collection_name,
-                text = laptop_text
-            )
-        return vector_store
+
     
     def similar_search(self, query: str, vector_store: Chroma) -> List[Document]:
         docs = vector_store.similarity_search(query= query, k= self.rag_config.top_k_result)

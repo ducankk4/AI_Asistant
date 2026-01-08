@@ -67,6 +67,8 @@ class FinalGraph:
         # self.rag_processor = RAGGraph().implement_graph()
         self.final_node = FinalNodes()
         self.memory_saver = memory_saver if memory_saver else MemorySaver()
+    
+    def implement_graph(self):
         # initialize stateGraph
         final_graph = StateGraph(state_schema= FinalState)
 

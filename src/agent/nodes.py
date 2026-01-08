@@ -1,29 +1,33 @@
 from src.agent.model import RAGState, QueryRouting, QueryRewrite, QueryAnalysis, FinalState
 from src.prompts.rag_prompts import RESPONSE_PROMPT, REWRITE_PROMPT, ROUTING_PROMPT, QUERY_ANALYSIS_PROMPT, FINAL_RESPONSE_PROMPT
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
 from typing import List, Dict
 from src.logger import logger
-from src.config import REWRITE_MODEL, ROUTING_MODEL, RERANKING_MODEL, RESPONSE_MODEL, GROQ_API_KEY, ANALYSIS_MODEL
-from src.main import LaptopRAG
+from src.config import REWRITE_MODEL, ROUTING_MODEL, RERANKING_MODEL, RESPONSE_MODEL, GROQ_API_KEY, ANALYSIS_MODEL, GOOGLE_API_KEY
+# from src.main import LaptopRAG
+from src.vector_store.chroma import ChromaVectorStore
+from src.config import CollectionNames
 import asyncio
 
 class RAGNodes:
     def __init__(self):
-        self.laptop_rag = LaptopRAG()
+        # self.laptop_rag = LaptopRAG()
+        self.collection_names = CollectionNames()
+        self.chroma_vector_store = ChromaVectorStore()
 
     def query_rewrite_node(self, state: RAGState) -> RAGState:
         """node for query rewrite"""
         query = state['query']
-        chat_history = state.get('chat_history', [])
+        chat_history = state.get('chat_history', "")
         need_rewrite = state.get('need_rewrite', False)
-        reason_for_rewrite = state.get('reason_for_rewrite', '')
 
         # implement rewrite chain
-        rewrite_llm = ChatGroq(model= REWRITE_MODEL,
-                               max_tokens=2048,
-                                api_key= GROQ_API_KEY)
+        rewrite_llm = ChatGoogleGenerativeAI(model= REWRITE_MODEL,
+                               max_tokens=None,
+                                api_key= GOOGLE_API_KEY)
         rewrite_chain = ChatPromptTemplate.from_template(REWRITE_PROMPT) | rewrite_llm.with_structured_output(QueryRewrite)
 
         if not need_rewrite:
@@ -52,9 +56,9 @@ class RAGNodes:
         rewrited_query = state['rewrited_query']
         
         # implement routing chain
-        routing_llm = ChatGroq(model= ROUTING_MODEL,
+        routing_llm = ChatGoogleGenerativeAI(model= ROUTING_MODEL,
                                
-                                 api_key= GROQ_API_KEY)
+                                 api_key= GOOGLE_API_KEY)
         routing_chain = ChatPromptTemplate.from_template(ROUTING_PROMPT) | routing_llm.with_structured_output(QueryRouting)
 
         logger.info("Routing query...")
@@ -77,9 +81,12 @@ class RAGNodes:
         logger.info("Retrieving documents from laptop collection...")
         try:
             print(rewrite_query)
-            results = self.laptop_rag.similarity_response(rewrite_query)
+            laptop_collection = self.chroma_vector_store.load_collection(self.collection_names.LAPTOP_COLLECTION_NAME)
+            results = self.chroma_vector_store.hybrid_search(rewrite_query, laptop_collection)
             print(results)
             # logger.info(f"retrieved {len(results)} documents from laptop collection")
+            logger.info(f"retrieved {len(results)} documents from laptop collection")
+            logger.info(f"type of results : {type(results)}")
             state.update({
                 'retrived_docs': results
             })
@@ -92,22 +99,41 @@ class RAGNodes:
     
     def csbh_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach bao hanh retrieve docs"""
+        rewrite_query = state['rewrited_query']
+        logger.info("Retrieving documents from laptop collection...")
+        csbh_collection = self.chroma_vector_store.load_collection(self.collection_names.CSBH_COLLECTION_NAME)
+        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csbh_collection)
+        logger.info(f"retrieved {len(results)} documents from csbh collection")
+        logger.info(f"type of results : {type(results)}")
+
         state.update({
-            'retrived_docs': "chinh sach bao hanh rat uy tin va tan tam"
+            'retrived_docs': results
         })
         return state
     
     def csdt_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach doi tra retrieve docs"""
+        rewrite_query = state['rewrited_query']
+        logger.info("Retrieving documents from laptop collection...")
+        csdt_collection = self.chroma_vector_store.load_collection(self.collection_names.CSDT_COLLECTION_NAME)
+        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csdt_collection)
+        logger.info(f"retrieved {len(results)} documents from csdt collection")
+        logger.info(f"type of results : {type(results)}")
         state.update({
-            'retrived_docs': "chinh sach doi tra rat uy tin va tan tam"
+            'retrived_docs': results
         })
         return state
     
     def csvc_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach van chuyen retrieve docs"""
+        rewrite_query = state['rewrited_query']
+        logger.info("Retrieving documents from laptop collection...")
+        csvc_collection = self.chroma_vector_store.load_collection(self.collection_names.CSVC_COLLECTION_NAME)
+        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csvc_collection)
+        logger.info(f"retrieved {len(results)} documents from csvc collection")
+        logger.info(f"type of results : {type(results)}")
         state.update({
-            'retrived_docs': "chinh sach van chuyen rat uy tin va tan tam"
+            'retrived_docs': results
         })
         return state
     
@@ -123,9 +149,9 @@ class RAGNodes:
             context = "\n".join([doc.page_content for doc in retrieved_docs])
 
         # implement response generation chain
-        response_llm = ChatGroq(model= RESPONSE_MODEL,
+        response_llm = ChatGoogleGenerativeAI(model= RESPONSE_MODEL,
                                 max_tokens=2048,
-                                  api_key= GROQ_API_KEY)
+                                  api_key= GOOGLE_API_KEY)
         reponse_chain = ChatPromptTemplate.from_template(RESPONSE_PROMPT) | response_llm
 
         logger.info("Generating response...")
@@ -146,10 +172,10 @@ class FinalNodes:
 
     def query_analysis_node(self, state: FinalState) -> FinalState:
         query_analysis_prompt = ChatPromptTemplate.from_template(QUERY_ANALYSIS_PROMPT)
-        llm = ChatGroq(model= ANALYSIS_MODEL,
+        llm = ChatGoogleGenerativeAI(model= ANALYSIS_MODEL,
                        max_tokens=2048,
                        temperature=0,
-                         api_key= GROQ_API_KEY)
+                         api_key= GOOGLE_API_KEY)
         analysis_chain = query_analysis_prompt | llm.with_structured_output(QueryAnalysis)
 
         logger.info("Analyzing query...")
@@ -246,9 +272,9 @@ class FinalNodes:
         all_docs = state.get('all_retrieved_docs', [])
 
         if all_docs:
-            response_llm = ChatGroq(model= RESPONSE_MODEL,
+            response_llm = ChatGoogleGenerativeAI(model= RESPONSE_MODEL,
                                     max_tokens=2048,
-                                    api_key= GROQ_API_KEY)
+                                    api_key= GOOGLE_API_KEY)
             reponse_chain = ChatPromptTemplate.from_template(FINAL_RESPONSE_PROMPT) | response_llm
             query_combined = self.dict_to_text(query_results)
             logger.info("Generating final response...")
@@ -267,7 +293,22 @@ class FinalNodes:
     
 
 
-    
+if __name__ == "__main__":
+    rag_nodes = RAGNodes()
+    rag_state: RAGState = {
+        "query": "ANh tên là Đức đẹp trai năm nay 24 tuổi nhà ở Hà nội anh 24 tuổi nên muốn tìm 1 cái laptop chơi game khỏe giá trung bình",
+        "chat_history": [],
+        "rewrited_query": "",
+        "reason_for_rewrite": "",
+        "reason_for_routing": "",
+        "need_rewrite": True,
+        "routing_decision": "",
+        "retrived_docs": [],
+        "reranked_docs": [],
+        "subquery_answers": ""
+    }
+    result = rag_nodes.query_rewrite_node(rag_state)
+    pretty_print(result)
 
     
     
