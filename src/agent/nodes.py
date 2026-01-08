@@ -56,8 +56,7 @@ class RAGNodes:
         rewrited_query = state['rewrited_query']
         
         # implement routing chain
-        routing_llm = ChatGoogleGenerativeAI(model= ROUTING_MODEL,
-                               
+        routing_llm = ChatGoogleGenerativeAI(model= ROUTING_MODEL,     
                                  api_key= GOOGLE_API_KEY)
         routing_chain = ChatPromptTemplate.from_template(ROUTING_PROMPT) | routing_llm.with_structured_output(QueryRouting)
 
@@ -150,7 +149,6 @@ class RAGNodes:
 
         # implement response generation chain
         response_llm = ChatGoogleGenerativeAI(model= RESPONSE_MODEL,
-                                max_tokens=2048,
                                   api_key= GOOGLE_API_KEY)
         reponse_chain = ChatPromptTemplate.from_template(RESPONSE_PROMPT) | response_llm
 
@@ -173,7 +171,6 @@ class FinalNodes:
     def query_analysis_node(self, state: FinalState) -> FinalState:
         query_analysis_prompt = ChatPromptTemplate.from_template(QUERY_ANALYSIS_PROMPT)
         llm = ChatGoogleGenerativeAI(model= ANALYSIS_MODEL,
-                       max_tokens=2048,
                        temperature=0,
                          api_key= GOOGLE_API_KEY)
         analysis_chain = query_analysis_prompt | llm.with_structured_output(QueryAnalysis)
@@ -271,44 +268,43 @@ class FinalNodes:
         query_results = state['query_results']
         all_docs = state.get('all_retrieved_docs', [])
 
-        if all_docs:
-            response_llm = ChatGoogleGenerativeAI(model= RESPONSE_MODEL,
-                                    max_tokens=2048,
-                                    api_key= GOOGLE_API_KEY)
-            reponse_chain = ChatPromptTemplate.from_template(FINAL_RESPONSE_PROMPT) | response_llm
-            query_combined = self.dict_to_text(query_results)
-            logger.info("Generating final response...")
-            final_response = reponse_chain.invoke({
-                'original_query': original_quey,
-                'query_combined': query_combined
-            })
+        # if all_docs:
+        response_llm = ChatGoogleGenerativeAI(model= RESPONSE_MODEL, 
+                                api_key= GOOGLE_API_KEY)
+        reponse_chain = ChatPromptTemplate.from_template(FINAL_RESPONSE_PROMPT) | response_llm
+        query_combined = self.dict_to_text(query_results)
+        logger.info("Generating final response...")
+        final_response = reponse_chain.invoke({
+            'original_query': original_quey,
+            'query_combined': query_combined
+        })
 
-            return {
-                **state,
-                'final_answer': final_response.content
-            }
+        return {
+            **state,
+            'final_answer': final_response.content
+        }
         
     
 
     
 
 
-if __name__ == "__main__":
-    rag_nodes = RAGNodes()
-    rag_state: RAGState = {
-        "query": "ANh tên là Đức đẹp trai năm nay 24 tuổi nhà ở Hà nội anh 24 tuổi nên muốn tìm 1 cái laptop chơi game khỏe giá trung bình",
-        "chat_history": [],
-        "rewrited_query": "",
-        "reason_for_rewrite": "",
-        "reason_for_routing": "",
-        "need_rewrite": True,
-        "routing_decision": "",
-        "retrived_docs": [],
-        "reranked_docs": [],
-        "subquery_answers": ""
-    }
-    result = rag_nodes.query_rewrite_node(rag_state)
-    pretty_print(result)
+# if __name__ == "__main__":
+#     rag_nodes = RAGNodes()
+#     rag_state: RAGState = {
+#         "query": "ANh tên là Đức đẹp trai năm nay 24 tuổi nhà ở Hà nội anh 24 tuổi nên muốn tìm 1 cái laptop chơi game khỏe giá trung bình",
+#         "chat_history": [],
+#         "rewrited_query": "",
+#         "reason_for_rewrite": "",
+#         "reason_for_routing": "",
+#         "need_rewrite": True,
+#         "routing_decision": "",
+#         "retrived_docs": [],
+#         "reranked_docs": [],
+#         "subquery_answers": ""
+#     }
+#     result = rag_nodes.query_rewrite_node(rag_state)
+#     print(result)
 
     
     
