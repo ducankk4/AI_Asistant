@@ -29,7 +29,7 @@ class RAGGraph:
         rag_graph.add_node("csbh_retrieve_node", self.graph_node.csbh_retrieve_node)
         rag_graph.add_node("csdt_retrieve_node", self.graph_node.csdt_retrieve_node)
         rag_graph.add_node("csvc_retrieve_node", self.graph_node.csvc_retrieve_node)
-        rag_graph.add_node("generate_node", self.graph_node.generate_node)
+        # rag_graph.add_node("generate_node", self.graph_node.generate_node)
 
         # set entry point which node to start in graph
         # rag_graph.set_entry_point("query_rewrite_node")
@@ -51,13 +51,10 @@ class RAGGraph:
         )
 
         # add edges to generation node
-        rag_graph.add_edge("laptop_retrieve_node", "generate_node")
-        rag_graph.add_edge("csbh_retrieve_node", "generate_node")
-        rag_graph.add_edge("csdt_retrieve_node", "generate_node")
-        rag_graph.add_edge("csvc_retrieve_node", "generate_node")
-
-        rag_graph.add_edge("generate_node", END)
-
+        rag_graph.add_edge("laptop_retrieve_node", END)
+        rag_graph.add_edge("csbh_retrieve_node", END)
+        rag_graph.add_edge("csdt_retrieve_node", END)
+        rag_graph.add_edge("csvc_retrieve_node", END)
         # compile graph
         # checkpointer= self.memory_saver
         compiled_rag_graph = rag_graph.compile()
@@ -70,12 +67,27 @@ class FinalGraph:
         self.final_node = FinalNodes()
         # self.memory_saver = memory_saver if memory_saver else MemorySaver()
     
+    def route_to_answering_directly(self, state: FinalState):
+        need_answer_direction = state.get("need_answer_diection", False)
+        return "final_generate_node" if need_answer_direction else "process_queries"
+
     def implement_graph(self):
         # initialize stateGraph
         final_graph = StateGraph(state_schema= FinalState)
 
         # add nodes
         final_graph.add_node("query_analysis_node", self.final_node.query_analysis_node)
+
+        # add conditonal edges from 
+        final_graph.add_conditional_edges(
+            "query_analysis_node",
+            self.route_to_answering_directly,
+            {
+                "final_generate_node": "final_generate_node",
+                "process_queries": "process_queries"
+            }
+        )
+
         final_graph.add_node("process_queries", self.final_node.process_queries)
         final_graph.add_node("final_generate_node", self.final_node.final_generate_node)
 
