@@ -17,8 +17,9 @@ class RAGNodes:
         # self.laptop_rag = LaptopRAG()
         self.collection_names = CollectionNames()
         self.chroma_vector_store = ChromaVectorStore()
+        self.chroma_vector_store.initialize_collections()
 
-    def query_rewrite_node(self, state: RAGState) -> RAGState:
+    async def query_rewrite_node(self, state: RAGState) -> RAGState:
         """node for query rewrite"""
         query = state['query']
         chat_history = state.get('chat_history', "")
@@ -36,7 +37,7 @@ class RAGNodes:
         
         logger.info("Rewriting query...")
 
-        rewrite_result = rewrite_chain.invoke({
+        rewrite_result = await rewrite_chain.ainvoke({
             'query': query,
             'chat_history': chat_history
         })
@@ -51,7 +52,7 @@ class RAGNodes:
         })
         return state
     
-    def query_routing_node(self, state: RAGState) -> RAGState:
+    async def query_routing_node(self, state: RAGState) -> RAGState:
         """node for query routing"""
         rewrited_query = state['rewrited_query']
         
@@ -61,7 +62,7 @@ class RAGNodes:
         routing_chain = ChatPromptTemplate.from_template(ROUTING_PROMPT) | routing_llm.with_structured_output(QueryRouting)
 
         logger.info("Routing query...")
-        routing_result = routing_chain.invoke({
+        routing_result = await routing_chain.ainvoke({
             'query': rewrited_query
         })
         
@@ -74,14 +75,14 @@ class RAGNodes:
         })
         return state
     
-    def laptop_retrieve_node(self, state: RAGState) -> RAGState:
+    async def laptop_retrieve_node(self, state: RAGState) -> RAGState:
         """node for laptop retrieve docs"""
         rewrite_query = state['rewrited_query']
         logger.info("Retrieving documents from laptop collection...")
         try:
             print(rewrite_query)
-            laptop_collection = self.chroma_vector_store.load_collection(self.collection_names.LAPTOP_COLLECTION_NAME)
-            results = self.chroma_vector_store.hybrid_search(rewrite_query, laptop_collection)
+            laptop_collection = self.chroma_vector_store.laptop_collection
+            results = await self.chroma_vector_store.hybrid_search(rewrite_query, laptop_collection)
             print(results)
             # logger.info(f"retrieved {len(results)} documents from laptop collection")
             logger.info(f"retrieved {len(results)} documents from laptop collection")
@@ -96,12 +97,12 @@ class RAGNodes:
             })
         return state
     
-    def csbh_retrieve_node(self, state: RAGState) -> RAGState:
+    async def csbh_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach bao hanh retrieve docs"""
         rewrite_query = state['rewrited_query']
-        logger.info("Retrieving documents from laptop collection...")
-        csbh_collection = self.chroma_vector_store.load_collection(self.collection_names.CSBH_COLLECTION_NAME)
-        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csbh_collection)
+        logger.info("Retrieving documents from csbh collection...")
+        csbh_collection = self.chroma_vector_store.csbh_collection
+        results = await self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csbh_collection)
         logger.info(f"retrieved {len(results)} documents from csbh collection")
         logger.info(f"type of results : {type(results)}")
 
@@ -110,12 +111,12 @@ class RAGNodes:
         })
         return state
     
-    def csdt_retrieve_node(self, state: RAGState) -> RAGState:
+    async def csdt_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach doi tra retrieve docs"""
         rewrite_query = state['rewrited_query']
         logger.info("Retrieving documents from laptop collection...")
-        csdt_collection = self.chroma_vector_store.load_collection(self.collection_names.CSDT_COLLECTION_NAME)
-        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csdt_collection)
+        csdt_collection = self.chroma_vector_store.csdt_collection
+        results = await self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csdt_collection)
         logger.info(f"retrieved {len(results)} documents from csdt collection")
         logger.info(f"type of results : {type(results)}")
         state.update({
@@ -123,12 +124,12 @@ class RAGNodes:
         })
         return state
     
-    def csvc_retrieve_node(self, state: RAGState) -> RAGState:
+    async def csvc_retrieve_node(self, state: RAGState) -> RAGState:
         """node for chinh sach van chuyen retrieve docs"""
         rewrite_query = state['rewrited_query']
         logger.info("Retrieving documents from laptop collection...")
-        csvc_collection = self.chroma_vector_store.load_collection(self.collection_names.CSVC_COLLECTION_NAME)
-        results = self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csvc_collection)
+        csvc_collection = self.chroma_vector_store.csvc_collection
+        results = await self.chroma_vector_store.hybrid_search(query= rewrite_query, vector_store= csvc_collection)
         logger.info(f"retrieved {len(results)} documents from csvc collection")
         logger.info(f"type of results : {type(results)}")
         state.update({
@@ -136,7 +137,7 @@ class RAGNodes:
         })
         return state
     
-    def generate_node(self, state: RAGState) -> RAGState:
+    async def generate_node(self, state: RAGState) -> RAGState:
         """node for response generation"""
         retrieved_docs = state.get('retrived_docs', [])
         rewrited_query = state['rewrited_query']
@@ -153,7 +154,7 @@ class RAGNodes:
         reponse_chain = ChatPromptTemplate.from_template(RESPONSE_PROMPT) | response_llm
 
         logger.info("Generating response...")
-        response = reponse_chain.invoke({
+        response = await reponse_chain.ainvoke({
             'query': query,
             'context': context
         })
@@ -162,6 +163,7 @@ class RAGNodes:
         })
 
         return state
+    
 
 class FinalNodes:
     def __init__(self):
