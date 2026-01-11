@@ -1,6 +1,6 @@
 venv/
 .env
 __pycache__/
-vector_store/chroma_collections/
+src/vector_store/chroma_collections/
 app.log
 test.ipynb
