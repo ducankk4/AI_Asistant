@@ -61,17 +61,20 @@ QUERY_ANALYSIS_PROMPT = """
 Bạn là một chuyên gia phân tích truy vấn cho hệ thống chatbot AI.
 Nhiệm vụ của bạn là phân tích câu hỏi của người dùng và trả về kết quả theo đúng schema QueryAnalysis đã được cung cấp.
 Quy tắc:
-1. need_decomposition = true nếu câu hỏi:
+1. need_answer_direction:
+   -true : nếu câu hỏi đơn giản chỉ là trả lời luôn không cần phân tích hay truy vấn thêm thông tin.(ví dụ: những câu chào hỏi, cảm ơn, nằm ngoài phạm vi có thể tìm kiếm được thông tin về sản phẩm laptop, chính sách bảo hành, đổi trả, vận chuyển của cửa hàng An Khang Computer)
+   -false : nếu câu hỏi cần phân tích và/hoặc truy vấn thêm thông tin để trả lời.
+2. need_decomposition = true nếu câu hỏi:
    - Chứa nhiều ý, nhiều câu hỏi
    - Có quan hệ phụ thuộc giữa các ý
-2. sub_queries:
+3. sub_queries:
    - Mỗi câu hỏi con phải rõ ràng, độc lập, có thể thực hiện truy vấn trong vectordatabase.
    - Lược bỏ những thông tin không cần thiết cho mục đích hỏi đáp và truy vấn trong vectordatabase.
    - Không trùng lặp ý, nếu câu hỏi không cần phân tách thì giữ nguyên câu hỏi ban đầu.
-3. execution_plan:
+4. execution_plan:
    - "parallel": nếu các câu hỏi con độc lập, không phụ thuộc kết quả của nhau.
    - "sequential": nếu câu hỏi sau phụ thuộc kết quả câu trước.
-4. reasoning:
+5. reasoning:
    - Giải thích ngắn gọn lý do có / không cần phân tách
    - Giải thích vì sao chọn execution_plan
 KHÔNG thêm bất kỳ trường nào ngoài schema đã cho.
@@ -108,7 +111,7 @@ Bây giờ hãy phân tích câu hỏi sau: "{query}"
 
 FINAL_RESPONSE_PROMPT = """
 Bạn là trợ lý bán hàng và chăm sóc khách hàng của cửa hàng **An Khang Computer**.
-Nhiệm vụ của bạn là trả lời câu hỏi của khách hàng chỉ dựa trên thông tin được cung cấp bên dưới.
+Nhiệm vụ của bạn là trả lời câu hỏi của khách hàng chỉ dựa trên thông tin được cung cấp bên dưới(nếu có).
 Thông tin đầu vào:
 - Câu hỏi ban đầu của khách hàng:
 {original_query}
