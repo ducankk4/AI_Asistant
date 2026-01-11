@@ -26,3 +26,6 @@ class GoogleEmbedding(BaseEmbeddingAPI):
             embed = self.embed_query(text)
             embeddings.append(embed)
         return embeddings
+    
+
+    

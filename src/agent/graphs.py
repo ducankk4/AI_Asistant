@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, END, START
 from src.agent.nodes import RAGNodes, FinalNodes
 from src.agent.model import RAGState, FinalState
 from typing import List, Literal
@@ -11,7 +11,7 @@ from src.logger import logger
 class RAGGraph:
     def __init__(self, memory_saver = None):
         self.graph_node = RAGNodes()
-        self.memory_saver = memory_saver if memory_saver else MemorySaver()
+        # self.memory_saver = memory_saver if memory_saver else MemorySaver()
 
     def route_to_collection(self, state: RAGState) -> Literal["laptop_retrieve_node", "csbh_retrieve_node", "csdt_retrieve_node", "csvc_retrieve_node"]:
         "route to the collection based on query routing node"
@@ -32,9 +32,10 @@ class RAGGraph:
         rag_graph.add_node("generate_node", self.graph_node.generate_node)
 
         # set entry point which node to start in graph
-        rag_graph.set_entry_point("query_rewrite_node")
+        # rag_graph.set_entry_point("query_rewrite_node")
 
         # add edges
+        rag_graph.add_edge(START, "query_rewrite_node")
         rag_graph.add_edge("query_rewrite_node", "query_routing_node")
 
         # add conditonal edges from routing node
@@ -58,15 +59,16 @@ class RAGGraph:
         rag_graph.add_edge("generate_node", END)
 
         # compile graph
-        compiled_rag_graph = rag_graph.compile(checkpointer= self.memory_saver)
+        # checkpointer= self.memory_saver
+        compiled_rag_graph = rag_graph.compile()
 
         return compiled_rag_graph
 
 class FinalGraph:
-    def __init__(self, memory_saver = None):
+    def __init__(self):
         # self.rag_processor = RAGGraph().implement_graph()
         self.final_node = FinalNodes()
-        self.memory_saver = memory_saver if memory_saver else MemorySaver()
+        # self.memory_saver = memory_saver if memory_saver else MemorySaver()
     
     def implement_graph(self):
         # initialize stateGraph
@@ -86,7 +88,7 @@ class FinalGraph:
         final_graph.add_edge("final_generate_node", END)
 
         # compile gragh
-        compiled_final_graph = final_graph.compile(checkpointer= self.memory_saver)
+        compiled_final_graph = final_graph.compile()
         return compiled_final_graph
     
 

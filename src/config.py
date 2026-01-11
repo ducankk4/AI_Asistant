@@ -9,11 +9,11 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 EMBEDDING_MODEL_VN = "text-embedding-3-large"
 GOOGLE_EMBEDDING_MODEL = "gemini-embedding-001"
-ROUTING_MODEL = "gemini-2.5-flash-lite"
+ROUTING_MODEL = "gemini-3-flash-preview"
 RERANKING_MODEL = ""
-RESPONSE_MODEL = "gemini-2.5-flash-lite"
-REWRITE_MODEL = "gemini-2.5-flash-lite"
-ANALYSIS_MODEL = "gemini-2.5-flash-lite"
+RESPONSE_MODEL = "gemini-3-flash-preview"
+REWRITE_MODEL = "gemini-3-flash-preview"
+ANALYSIS_MODEL = "gemini-3-flash-preview"
 
 class DataPaths:
     FINAL_LAPTOP_DATA = r"src\crawl_data\final_data\laptop.txt"
@@ -23,8 +23,8 @@ class DataPaths:
 
 class RAG_config:
     top_k_result: int = 3
-    chunk_size: int = 512
-    chunk_overlap: int = 100
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
     persist_directory: str = r"src\vector_store\chroma_collections"
 class CollectionNames:
     LAPTOP_COLLECTION_NAME: str = "laptop_collection"
@@ -33,3 +33,5 @@ class CollectionNames:
     CSVC_COLLECTION_NAME: str = "csvc_collection"
 
 rag_config = RAG_config()
+collection_names = CollectionNames()
+data_paths = DataPaths()

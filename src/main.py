@@ -13,7 +13,7 @@ class LaptopRAG:
     def get_collection(self):
         vector_store = self.chroma_vector_store.get_or_create_collection(
             collection_name= LAPTOP_COLLECTION_NAME,
-            data_path= FINAL_LAPTOP_DATA
+            data_path= FINAL_LAPTOP_DATA 
         )
         return vector_store
     

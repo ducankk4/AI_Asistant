@@ -59,11 +59,7 @@ context: {context}
 
 QUERY_ANALYSIS_PROMPT = """
 Bạn là một chuyên gia phân tích truy vấn cho hệ thống chatbot AI.
-Nhiệm vụ của bạn là phân tích câu hỏi của người dùng và trả về kết quả theo đúng schema QueryAnalysis với các trường sau:
-- need_decomposition (bool)
-- sub_queries (list[str])
-- execution_plan ("parallel" | "sequential")
-- reasoning (string)
+Nhiệm vụ của bạn là phân tích câu hỏi của người dùng và trả về kết quả theo đúng schema QueryAnalysis đã được cung cấp.
 Quy tắc:
 1. need_decomposition = true nếu câu hỏi:
    - Chứa nhiều ý, nhiều câu hỏi
@@ -73,8 +69,8 @@ Quy tắc:
    - Lược bỏ những thông tin không cần thiết cho mục đích hỏi đáp và truy vấn trong vectordatabase.
    - Không trùng lặp ý, nếu câu hỏi không cần phân tách thì giữ nguyên câu hỏi ban đầu.
 3. execution_plan:
-   - "parallel": nếu các câu hỏi con độc lập, không phụ thuộc kết quả của nhau
-   - "sequential": nếu câu hỏi sau phụ thuộc kết quả câu trước
+   - "parallel": nếu các câu hỏi con độc lập, không phụ thuộc kết quả của nhau.
+   - "sequential": nếu câu hỏi sau phụ thuộc kết quả câu trước.
 4. reasoning:
    - Giải thích ngắn gọn lý do có / không cần phân tách
    - Giải thích vì sao chọn execution_plan
@@ -106,6 +102,7 @@ sub_queries:
 - Chính sách đổi trả sản phẩm của cửa hàng.
 execution_plan: parallel
 reasoning: Câu hỏi bao gồm hai ý độc lập: tìm hiểu về laptop Asus và chính sách đổi trả của cửa hàng, không phụ thuộc lẫn nhau.
+----------------
 Bây giờ hãy phân tích câu hỏi sau: "{query}"
 """
 
